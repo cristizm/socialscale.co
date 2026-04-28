@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InstaOPS — Instagram Management Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --surface3: #22222f;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0f0f5;
+    --muted: #888899;
+    --accent: #c850f8;
+    --accent2: #ff6b35;
+    --accent3: #00d9a0;
+    --accent4: #4d9fff;
+    --font: 'DM Sans', system-ui, sans-serif;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; min-height: 100vh; overflow-x: hidden; }
+
+  .app { display: flex; min-height: 100vh; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px; background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; flex-shrink: 0;
+  }
+  .logo { padding: 24px 20px; border-bottom: 1px solid var(--border); }
+  .logo-text { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+  .logo-text span { color: var(--accent); }
+  .logo-sub { font-size: 11px; color: var(--muted); margin-top: 2px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .nav { padding: 12px 10px; flex: 1; }
+  .nav-group { margin-bottom: 20px; }
+  .nav-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; padding: 0 10px; margin-bottom: 6px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: var(--radius-sm);
+    color: var(--muted); cursor: pointer; transition: all 0.15s; font-size: 13.5px; font-weight: 400; border: none; background: none; width: 100%; text-align: left;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(200,80,248,0.12); color: var(--accent); }
+  .nav-item .icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .nav-badge { margin-left: auto; background: var(--accent); color: white; font-size: 10px; padding: 1px 6px; border-radius: 99px; font-weight: 500; }
+  .sidebar-footer { padding: 16px; border-top: 1px solid var(--border); }
+  .plan-badge { background: linear-gradient(135deg, rgba(200,80,248,0.2), rgba(77,159,255,0.2)); border: 1px solid rgba(200,80,248,0.3); border-radius: var(--radius-sm); padding: 8px 12px; font-size: 12px; }
+  .plan-badge strong { color: var(--accent); display: block; font-size: 13px; }
+
+  /* MAIN */
+  .main { flex: 1; overflow-y: auto; }
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(10,10,15,0.9); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px; height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 16px; }
+  .page-title { font-size: 16px; font-weight: 500; }
+  .date-tag { font-size: 12px; color: var(--muted); background: var(--surface2); padding: 4px 10px; border-radius: 99px; border: 1px solid var(--border); }
+  .topbar-actions { display: flex; align-items: center; gap: 10px; }
+  .btn { padding: 8px 16px; border-radius: var(--radius-sm); border: none; cursor: pointer; font-family: var(--font); font-size: 13px; font-weight: 500; transition: all 0.15s; }
+  .btn-ghost { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--border2); }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  /* CONTENT */
+  .content { padding: 28px; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* STAT CARDS */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px 20px; position: relative; overflow: hidden;
+  }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+  .stat-card.purple::before { background: var(--accent); }
+  .stat-card.orange::before { background: var(--accent2); }
+  .stat-card.green::before { background: var(--accent3); }
+  .stat-card.blue::before { background: var(--accent4); }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+  .stat-value { font-size: 28px; font-weight: 600; letter-spacing: -1px; font-family: 'DM Mono', monospace; }
+  .stat-value.purple { color: var(--accent); }
+  .stat-value.orange { color: var(--accent2); }
+  .stat-value.green { color: var(--accent3); }
+  .stat-value.blue { color: var(--accent4); }
+  .stat-delta { font-size: 12px; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+  .delta-up { color: var(--accent3); }
+  .delta-down { color: #ff5555; }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;
+  }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .card-title { font-size: 14px; font-weight: 500; }
+  .card-subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* CHARTS */
+  .mini-chart { display: flex; align-items: flex-end; gap: 4px; height: 60px; }
+  .bar { flex: 1; border-radius: 3px 3px 0 0; transition: opacity 0.15s; cursor: pointer; }
+  .bar:hover { opacity: 0.7; }
+  .bar.purple { background: var(--accent); }
+  .bar.orange { background: var(--accent2); }
+  .bar.green { background: var(--accent3); }
+  .chart-label { flex: 1; text-align: center; font-size: 10px; color: var(--muted); }
+
+  /* ACCOUNTS */
+  .account-item {
+    display: flex; align-items: center; gap: 14px; padding: 12px 0;
+    border-bottom: 1px solid var(--border); cursor: pointer;
+  }
+  .account-item:last-child { border-bottom: none; }
+  .account-avatar {
+    width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600; flex-shrink: 0; position: relative;
+  }
+  .account-avatar .online {
+    position: absolute; bottom: 1px; right: 1px; width: 9px; height: 9px;
+    background: var(--accent3); border-radius: 50%; border: 2px solid var(--surface);
+  }
+  .account-info { flex: 1; min-width: 0; }
+  .account-name { font-size: 13.5px; font-weight: 500; }
+  .account-handle { font-size: 12px; color: var(--muted); }
+  .account-stats { text-align: right; }
+  .account-followers { font-size: 13px; font-weight: 500; font-family: 'DM Mono', monospace; }
+  .account-trend { font-size: 11px; color: var(--accent3); }
+
+  /* POSTS */
+  .post-item {
+    display: flex; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .post-item:last-child { border-bottom: none; }
+  .post-thumb { width: 42px; height: 42px; border-radius: 8px; background: var(--surface3); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .post-info { flex: 1; min-width: 0; }
+  .post-caption { font-size: 13px; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .post-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .post-status { font-size: 11px; padding: 3px 8px; border-radius: 99px; font-weight: 500; }
+  .status-scheduled { background: rgba(77,159,255,0.15); color: var(--accent4); }
+  .status-live { background: rgba(0,217,160,0.15); color: var(--accent3); }
+  .status-draft { background: rgba(255,255,255,0.06); color: var(--muted); }
+
+  /* TABLE */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-table th { text-align: left; color: var(--muted); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; padding: 0 0 12px; border-bottom: 1px solid var(--border); }
+  .data-table td { padding: 12px 0; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table td:last-child { text-align: right; }
+  .tag { font-size: 11px; padding: 3px 8px; border-radius: 99px; display: inline-flex; }
+  .tag-reel { background: rgba(200,80,248,0.15); color: var(--accent); }
+  .tag-photo { background: rgba(255,107,53,0.15); color: var(--accent2); }
+  .tag-story { background: rgba(0,217,160,0.15); color: var(--accent3); }
+  .tag-carousel { background: rgba(77,159,255,0.15); color: var(--accent4); }
+
+  /* SPARKLINE */
+  .sparkline { display: flex; align-items: flex-end; gap: 2px; height: 28px; }
+  .sp { width: 6px; border-radius: 2px 2px 0 0; background: var(--accent); opacity: 0.5; }
+  .sp:last-child { opacity: 1; }
+
+  /* PROGRESS */
+  .progress-bar { height: 4px; background: var(--surface3); border-radius: 99px; overflow: hidden; margin-top: 8px; }
+  .progress-fill { height: 100%; border-radius: 99px; }
+
+  /* ACCOUNT CARDS */
+  .account-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px; transition: border-color 0.15s;
+  }
+  .account-card:hover { border-color: var(--border2); }
+  .account-card-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .acct-avatar { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; }
+  .acct-name { font-size: 15px; font-weight: 600; }
+  .acct-handle { font-size: 12px; color: var(--muted); }
+  .acct-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+  .acct-stat { background: var(--surface2); border-radius: var(--radius-sm); padding: 10px; text-align: center; }
+  .acct-stat-val { font-size: 15px; font-weight: 600; font-family: 'DM Mono', monospace; }
+  .acct-stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+  .mini-chart-row { display: flex; align-items: flex-end; gap: 3px; height: 36px; }
+  .mini-bar { border-radius: 2px 2px 0 0; flex: 1; }
+
+  /* FORMS */
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-label { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .form-input {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text); font-family: var(--font); font-size: 13.5px; padding: 10px 14px;
+    outline: none; transition: border-color 0.15s; width: 100%;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-select {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text); font-family: var(--font); font-size: 13.5px; padding: 10px 14px;
+    outline: none; width: 100%;
+  }
+  .form-textarea {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text); font-family: var(--font); font-size: 13.5px; padding: 10px 14px;
+    outline: none; resize: vertical; min-height: 80px; width: 100%;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100;
+    display: none; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border2); border-radius: 16px;
+    padding: 28px; width: 520px; max-height: 90vh; overflow-y: auto;
+  }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .modal-title { font-size: 16px; font-weight: 600; }
+  .modal-close {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: 18px; width: 28px; height: 28px; display: flex; align-items: center;
+    justify-content: center; border-radius: 6px;
+  }
+  .modal-close:hover { background: var(--surface2); color: var(--text); }
+
+  /* CALENDAR */
+  .cal-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 8px; }
+  .cal-day-name { text-align: center; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 0; }
+  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .cal-day {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px; min-height: 70px; cursor: pointer; transition: border-color 0.15s;
+  }
+  .cal-day:hover { border-color: var(--border2); }
+  .cal-day.other-month { opacity: 0.3; }
+  .cal-day.today { border-color: var(--accent); }
+  .cal-day-num { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .cal-day.today .cal-day-num { color: var(--accent); font-weight: 600; }
+  .cal-dot { width: 20px; height: 20px; border-radius: 4px; margin: 2px 0; font-size: 9px; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+  .cal-dot.reel { background: rgba(200,80,248,0.2); color: var(--accent); }
+  .cal-dot.photo { background: rgba(255,107,53,0.2); color: var(--accent2); }
+  .cal-dot.story { background: rgba(0,217,160,0.2); color: var(--accent3); }
+
+  /* NOTIFICATIONS */
+  .notif { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+  .notif:last-child { border-bottom: none; }
+  .notif-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .notif-text { font-size: 13px; line-height: 1.5; }
+  .notif-time { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 99px; }
+
+  /* FILTER BUTTONS */
+  .filter-btn.active { background: rgba(200,80,248,0.15); color: var(--accent); border-color: rgba(200,80,248,0.3); }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-text">Insta<span>OPS</span></div>
+      <div class="logo-sub">Management Platform</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-group">
+        <div class="nav-label">Overview</div>
+        <button class="nav-item active" onclick="switchSection('dashboard')">
+          <span class="icon">◈</span> Dashboard
+        </button>
+        <button class="nav-item" onclick="switchSection('analytics')">
+          <span class="icon">◉</span> Analytics
+        </button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">Conturi</div>
+        <button class="nav-item" onclick="switchSection('accounts')">
+          <span class="icon">◎</span> Toate conturile
+        </button>
+        <button class="nav-item" onclick="switchSection('posts')">
+          <span class="icon">◫</span> Postări <span class="nav-badge" id="badge-count">3</span>
+        </button>
+        <button class="nav-item" onclick="switchSection('calendar')">
+          <span class="icon">◷</span> Calendar
+        </button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">Setări</div>
+        <button class="nav-item" onclick="switchSection('settings')">
+          <span class="icon">◌</span> Configurare
+        </button>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="plan-badge">
+        <strong>Pro Plan</strong>
+        8 conturi active · 2 rămase
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="page-title" id="page-title">Dashboard</span>
+        <span class="date-tag" id="today-date"></span>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openModal('add-account-modal')">+ Cont nou</button>
+        <button class="btn btn-primary btn-sm" onclick="openModal('add-post-modal')">+ Postare</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="section active" id="section-dashboard">
+        <div class="stats-row">
+          <div class="stat-card purple">
+            <div class="stat-label">Views azi</div>
+            <div class="stat-value purple">248.4K</div>
+            <div class="stat-delta"><span class="delta-up">↑ 18.3%</span>&nbsp;față de ieri</div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-label">Reach săptămânal</div>
+            <div class="stat-value orange">1.2M</div>
+            <div class="stat-delta"><span class="delta-up">↑ 7.1%</span>&nbsp;față de săpt. trecută</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-label">Engagement rate</div>
+            <div class="stat-value green">4.7%</div>
+            <div class="stat-delta"><span class="delta-up">↑ 0.3pp</span>&nbsp;față de medie</div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-label">Followers total</div>
+            <div class="stat-value blue">89.3K</div>
+            <div class="stat-delta"><span class="delta-up">+342</span>&nbsp;azi</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Views zilnice — ultimele 14 zile</div>
+                <div class="card-subtitle">Toate conturile combinate</div>
+              </div>
+              <select class="form-select" style="width:auto;padding:6px 12px;font-size:12px;">
+                <option>Toate conturile</option>
+                <option>@fitlife.ro</option>
+                <option>@foodblog.ro</option>
+                <option>@travelromania</option>
+              </select>
+            </div>
+            <div id="main-chart" style="display:flex;align-items:flex-end;gap:6px;height:120px;"></div>
+            <div id="main-chart-labels" style="display:flex;gap:6px;margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Conturi active</div>
+              <button class="btn btn-ghost btn-sm" onclick="switchSection('accounts')">Vezi toate →</button>
+            </div>
+            <div id="dash-accounts"></div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Programate azi</div>
+              <button class="btn btn-ghost btn-sm" onclick="switchSection('posts')">Toate →</button>
+            </div>
+            <div id="dash-posts"></div>
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div class="card" style="grid-column: span 2;">
+            <div class="card-header">
+              <div class="card-title">Top postări luna aceasta</div>
+            </div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Postare</th>
+                  <th>Cont</th>
+                  <th>Tip</th>
+                  <th>Views</th>
+                  <th>Eng.</th>
+                  <th>Trend</th>
+                </tr>
+              </thead>
+              <tbody id="top-posts-table"></tbody>
+            </table>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Activitate recentă</div></div>
+            <div class="notif">
+              <div class="notif-icon" style="background:rgba(200,80,248,0.15);">📈</div>
+              <div>
+                <div class="notif-text">@fitlife.ro a depășit 10K views pe ultimul reel</div>
+                <div class="notif-time">acum 23 min</div>
+              </div>
+            </div>
+            <div class="notif">
+              <div class="notif-icon" style="background:rgba(0,217,160,0.15);">✅</div>
+              <div>
+                <div class="notif-text">Postare publicată automat pe @foodblog.ro</div>
+                <div class="notif-time">acum 1 oră</div>
+              </div>
+            </div>
+            <div class="notif">
+              <div class="notif-icon" style="background:rgba(255,107,53,0.15);">⚡</div>
+              <div>
+                <div class="notif-text">@travelromania: engagement spike +240%</div>
+                <div class="notif-time">acum 3 ore</div>
+              </div>
+            </div>
+            <div class="notif">
+              <div class="notif-icon" style="background:rgba(77,159,255,0.15);">👥</div>
+              <div>
+                <div class="notif-text">+1,200 followers noi azi pe toate conturile</div>
+                <div class="notif-time">acum 5 ore</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ANALYTICS -->
+      <div class="section" id="section-analytics">
+        <div class="stats-row" style="grid-template-columns: repeat(3,1fr);">
+          <div class="stat-card purple">
+            <div class="stat-label">Impresii totale</div>
+            <div class="stat-value purple">3.8M</div>
+            <div class="stat-delta"><span class="delta-up">↑ 22%</span>&nbsp;față de luna trecută</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-label">Saves</div>
+            <div class="stat-value green">12.4K</div>
+            <div class="stat-delta"><span class="delta-up">↑ 11%</span></div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-label">Shares</div>
+            <div class="stat-value orange">8.9K</div>
+            <div class="stat-delta"><span class="delta-up">↑ 5%</span></div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Views per tip de conținut</div></div>
+            <div style="display:flex;flex-direction:column;gap:14px;" id="content-type-bars"></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Ore optime de postare</div></div>
+            <div id="hour-heatmap" style="display:grid;grid-template-columns:repeat(24,1fr);gap:4px;"></div>
+            <div style="display:flex;justify-content:space-between;margin-top:8px;">
+              <span style="font-size:10px;color:var(--muted);">00:00</span>
+              <span style="font-size:10px;color:var(--muted);">12:00</span>
+              <span style="font-size:10px;color:var(--muted);">23:00</span>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:6px;">Mai închis = mai mult engagement</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Evoluție followers — toate conturile</div></div>
+          <div id="followers-chart" style="display:flex;align-items:flex-end;gap:6px;height:100px;"></div>
+          <div id="followers-labels" style="display:flex;gap:6px;margin-top:8px;"></div>
+        </div>
+      </div>
+
+      <!-- ACCOUNTS -->
+      <div class="section" id="section-accounts">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div>
+            <div style="font-size:20px;font-weight:600;">Conturi Instagram</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:4px;" id="accounts-subtitle">5 conturi active · 5 rămase pe plan</div>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('add-account-modal')">+ Adaugă cont</button>
+        </div>
+        <div id="accounts-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;"></div>
+      </div>
+
+      <!-- POSTS -->
+      <div class="section" id="section-posts">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div>
+            <div style="font-size:20px;font-weight:600;">Postări</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:4px;">Programate, live și draft-uri</div>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('add-post-modal')">+ Postare nouă</button>
+        </div>
+        <div class="card" style="margin-bottom:16px;">
+          <div style="display:flex;gap:8px;margin-bottom:16px;">
+            <button class="btn btn-ghost btn-sm filter-btn active" onclick="filterPosts('all',this)">Toate</button>
+            <button class="btn btn-ghost btn-sm filter-btn" onclick="filterPosts('scheduled',this)">Programate</button>
+            <button class="btn btn-ghost btn-sm filter-btn" onclick="filterPosts('live',this)">Live</button>
+            <button class="btn btn-ghost btn-sm filter-btn" onclick="filterPosts('draft',this)">Draft</button>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Postare</th>
+                <th>Cont</th>
+                <th>Tip</th>
+                <th>Data</th>
+                <th>Views</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="posts-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CALENDAR -->
+      <div class="section" id="section-calendar">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div style="font-size:20px;font-weight:600;" id="cal-month-title">Calendar editorial — Aprilie 2026</div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-ghost btn-sm">← Prev</button>
+            <button class="btn btn-ghost btn-sm">Next →</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="cal-header" id="cal-header"></div>
+          <div class="calendar-grid" id="calendar-grid"></div>
+        </div>
+        <div style="display:flex;gap:16px;margin-top:14px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);">
+            <div class="cal-dot reel" style="width:16px;height:16px;font-size:8px;display:inline-flex;">R</div> Reel
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);">
+            <div class="cal-dot photo" style="width:16px;height:16px;font-size:8px;display:inline-flex;">P</div> Photo
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);">
+            <div class="cal-dot story" style="width:16px;height:16px;font-size:8px;display:inline-flex;">S</div> Story
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="section" id="section-settings">
+        <div style="font-size:20px;font-weight:600;margin-bottom:20px;">Configurare platformă</div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Notificări</div></div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--border);">
+                <div>
+                  <div style="font-size:13.5px;font-weight:500;">Views spike alert</div>
+                  <div style="font-size:12px;color:var(--muted);">Notificare când views cresc cu >50%</div>
+                </div>
+                <div onclick="this.classList.toggle('off')" style="width:38px;height:22px;background:var(--accent);border-radius:99px;cursor:pointer;position:relative;transition:background 0.2s;">
+                  <div style="position:absolute;top:3px;right:3px;width:16px;height:16px;background:white;border-radius:50%;transition:right 0.2s;"></div>
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--border);">
+                <div>
+                  <div style="font-size:13.5px;font-weight:500;">Post publicat</div>
+                  <div style="font-size:12px;color:var(--muted);">Confirmare pentru fiecare postare</div>
+                </div>
+                <div style="width:38px;height:22px;background:var(--accent);border-radius:99px;cursor:pointer;position:relative;">
+                  <div style="position:absolute;top:3px;right:3px;width:16px;height:16px;background:white;border-radius:50%;"></div>
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-size:13.5px;font-weight:500;">Raport zilnic</div>
+                  <div style="font-size:12px;color:var(--muted);">Email cu stats la 08:00</div>
+                </div>
+                <div style="width:38px;height:22px;background:var(--surface3);border-radius:99px;cursor:pointer;position:relative;">
+                  <div style="position:absolute;top:3px;left:3px;width:16px;height:16px;background:var(--muted);border-radius:50%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Integrare API</div></div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div class="form-group">
+                <div class="form-label">Instagram Graph API Token</div>
+                <input type="password" class="form-input" value="IGQVJVNnRkYVdTb29SYWZ..." />
+              </div>
+              <div class="form-group">
+                <div class="form-label">Webhook URL</div>
+                <input type="text" class="form-input" value="https://instaops.app/webhook" />
+              </div>
+              <div class="form-group">
+                <div class="form-label">Facebook App ID</div>
+                <input type="text" class="form-input" placeholder="1234567890" />
+              </div>
+              <button class="btn btn-primary btn-sm" style="width:fit-content;">Salvează configurarea</button>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <div class="card-header"><div class="card-title">Planul curent</div></div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+            <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:16px;border:1px solid var(--border);">
+              <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Conturi active</div>
+              <div style="font-size:22px;font-weight:600;font-family:'DM Mono',monospace;" id="count-active">5</div>
+              <div class="progress-bar" style="margin-top:8px;"><div class="progress-fill" id="progress-active" style="width:50%;background:var(--accent);"></div></div>
+              <div style="font-size:11px;color:var(--muted);margin-top:6px;">5 din 10 conturi folosite</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:16px;border:1px solid var(--border);">
+              <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Postări luna aceasta</div>
+              <div style="font-size:22px;font-weight:600;font-family:'DM Mono',monospace;">148</div>
+              <div class="progress-bar" style="margin-top:8px;"><div class="progress-fill" style="width:49%;background:var(--accent4);"></div></div>
+              <div style="font-size:11px;color:var(--muted);margin-top:6px;">148 din 300 postări</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:16px;border:1px solid var(--border);">
+              <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Storage media</div>
+              <div style="font-size:22px;font-weight:600;font-family:'DM Mono',monospace;">4.2 GB</div>
+              <div class="progress-bar" style="margin-top:8px;"><div class="progress-fill" style="width:42%;background:var(--accent3);"></div></div>
+              <div style="font-size:11px;color:var(--muted);margin-top:6px;">4.2 din 10 GB folosiți</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Account -->
+<div class="modal-overlay" id="add-account-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Adaugă cont Instagram</div>
+      <button class="modal-close" onclick="closeModal('add-account-modal')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">Username</div>
+        <input type="text" class="form-input" placeholder="@username" id="new-account-username"/>
+      </div>
+      <div class="form-group">
+        <div class="form-label">Nișă / Categorie</div>
+        <select class="form-select" id="new-account-niche">
+          <option>Lifestyle</option>
+          <option>Food</option>
+          <option>Travel</option>
+          <option>Fitness</option>
+          <option>Business</option>
+          <option>Fashion</option>
+          <option>Tech</option>
+          <option>Beauty</option>
+          <option>Sports</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">Followers actuali</div>
+        <input type="number" class="form-input" placeholder="ex: 15000" id="new-account-followers"/>
+      </div>
+      <div class="form-group">
+        <div class="form-label">Frecvență postare</div>
+        <select class="form-select" id="new-account-freq">
+          <option>1 pe zi</option>
+          <option>2 pe zi</option>
+          <option>3-5 pe săptămână</option>
+          <option>Variabil</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:20px;">
+      <div class="form-label">Note / Descriere</div>
+      <textarea class="form-textarea" placeholder="Descriere scurtă a contului, publicul țintă, etc." id="new-account-notes"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="closeModal('add-account-modal')">Anulează</button>
+      <button class="btn btn-primary" onclick="addAccount()">Adaugă cont</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Post -->
+<div class="modal-overlay" id="add-post-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Postare nouă</div>
+      <button class="modal-close" onclick="closeModal('add-post-modal')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">Cont</div>
+        <select class="form-select" id="new-post-account"></select>
+      </div>
+      <div class="form-group">
+        <div class="form-label">Tip conținut</div>
+        <select class="form-select" id="new-post-type">
+          <option value="reel">Reel</option>
+          <option value="photo">Photo</option>
+          <option value="carousel">Carousel</option>
+          <option value="story">Story</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <div class="form-label">Caption</div>
+      <textarea class="form-textarea" placeholder="Scrie caption-ul postării..." id="new-post-caption"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-label">Data programată</div>
+        <input type="date" class="form-input" id="new-post-date"/>
+      </div>
+      <div class="form-group">
+        <div class="form-label">Ora</div>
+        <input type="time" class="form-input" id="new-post-time" value="12:00"/>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:20px;">
+      <div class="form-label">Hashtags</div>
+      <input type="text" class="form-input" placeholder="#fitness #motivation #romania ..." id="new-post-hashtags"/>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="addPostDraft()">Salvează draft</button>
+      <button class="btn btn-primary" onclick="addPost()">Programează</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────
+const accounts = [
+  { username:'@fitlife.ro', niche:'Fitness', followers:28400, followersK:'28.4K', color:'#c850f8', bg:'rgba(200,80,248,0.15)', emoji:'💪', views:[4200,5100,4800,6200,7100,6800,8200], engagement:'5.2%', posts:312 },
+  { username:'@foodblog.ro', niche:'Food', followers:19200, followersK:'19.2K', color:'#ff6b35', bg:'rgba(255,107,53,0.15)', emoji:'🍝', views:[2100,2800,3200,2900,3500,3800,4100], engagement:'4.1%', posts:487 },
+  { username:'@travelromania', niche:'Travel', followers:15800, followersK:'15.8K', color:'#00d9a0', bg:'rgba(0,217,160,0.15)', emoji:'🏔', views:[3100,2900,4200,3800,5100,4700,5800], engagement:'6.3%', posts:201 },
+  { username:'@stylebyanda', niche:'Fashion', followers:12100, followersK:'12.1K', color:'#4d9fff', bg:'rgba(77,159,255,0.15)', emoji:'👗', views:[1800,2200,1900,2400,2100,2700,2900], engagement:'3.8%', posts:156 },
+  { username:'@techbytes.ro', niche:'Tech', followers:8700, followersK:'8.7K', color:'#c850f8', bg:'rgba(200,80,248,0.15)', emoji:'💻', views:[900,1100,1300,1100,1600,1400,1800], engagement:'7.1%', posts:89 },
+];
+
+const scheduledPosts = [
+  { caption:'Antrenament dimineața, cel mai bun start al zilei! 🔥', account:'@fitlife.ro', type:'reel', date:'28 Apr · 08:00', status:'live', views:7240, emoji:'🎬' },
+  { caption:'Rețetă paste carbonara autentică — pas cu pas 🍝', account:'@foodblog.ro', type:'carousel', date:'28 Apr · 12:30', status:'scheduled', views:0, emoji:'🖼' },
+  { caption:'Cheile Bicazului — locul care îți taie răsuflarea 🏔', account:'@travelromania', type:'reel', date:'28 Apr · 18:00', status:'scheduled', views:0, emoji:'🎬' },
+  { caption:'Outfit of the week — spring vibes ✨', account:'@stylebyanda', type:'photo', date:'27 Apr · 10:00', status:'live', views:3100, emoji:'📸' },
+  { caption:'AI tools pe care le folosesc zilnic în 2026', account:'@techbytes.ro', type:'reel', date:'26 Apr · 14:00', status:'live', views:5400, emoji:'🎬' },
+  { caption:'Draft carbonara varianta 2 — pending edit', account:'@foodblog.ro', type:'photo', date:'—', status:'draft', views:0, emoji:'📸' },
+];
+
+// ─── UTILS ──────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
+});
+
+function switchSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('section-' + id).classList.add('active');
+  const titles = { dashboard:'Dashboard', analytics:'Analytics', accounts:'Conturi', posts:'Postări', calendar:'Calendar editorial', settings:'Configurare' };
+  document.getElementById('page-title').textContent = titles[id] || id;
+  document.querySelectorAll('.nav-item').forEach(b => {
+    if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + id + "'")) b.classList.add('active');
+  });
+  if (id === 'calendar') renderCalendar();
+  if (id === 'analytics') renderAnalytics();
+  if (id === 'accounts') updatePostAccountSelect();
+}
+
+function updateBadge() {
+  document.getElementById('badge-count').textContent = scheduledPosts.filter(p => p.status === 'scheduled').length;
+}
+
+// ─── MAIN CHART ─────────────────────────────────────────
+function renderMainChart() {
+  const labels = ['15A','16A','17A','18A','19A','20A','21A','22A','23A','24A','25A','26A','27A','28A'];
+  const values = [142,168,155,189,201,178,223,215,198,241,229,258,237,248];
+  const maxV = Math.max(...values);
+  document.getElementById('main-chart').innerHTML = values.map((v, i) =>
+    `<div style="flex:1;height:${Math.round(v/maxV*100)}%;background:var(--accent);opacity:${0.4+0.6*(i/(values.length-1))};border-radius:4px 4px 0 0;cursor:pointer;" title="${v}K views — ${labels[i]}"></div>`
+  ).join('');
+  document.getElementById('main-chart-labels').innerHTML = labels.map(d =>
+    `<div style="flex:1;text-align:center;font-size:10px;color:var(--muted);">${d}</div>`
+  ).join('');
+}
+
+// ─── DASHBOARD ──────────────────────────────────────────
+function renderDashAccounts() {
+  document.getElementById('dash-accounts').innerHTML = accounts.slice(0, 4).map(a => `
+    <div class="account-item">
+      <div class="account-avatar" style="background:${a.bg};color:${a.color};">${a.emoji}
+        <div class="online"></div>
+      </div>
+      <div class="account-info">
+        <div class="account-name">${a.username}</div>
+        <div class="account-handle">${a.niche}</div>
+      </div>
+      <div class="account-stats">
+        <div class="account-followers">${a.followersK}</div>
+        <div class="account-trend">↑ ${a.engagement}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderDashPosts() {
+  const todayPosts = scheduledPosts.filter(p => p.date.includes('28 Apr'));
+  document.getElementById('dash-posts').innerHTML = todayPosts.map(p => `
+    <div class="post-item">
+      <div class="post-thumb">${p.emoji}</div>
+      <div class="post-info">
+        <div class="post-caption">${p.caption}</div>
+        <div class="post-meta">${p.account} · ${p.date}</div>
+      </div>
+      <span class="post-status status-${p.status}">${p.status === 'live' ? '● Live' : p.status === 'scheduled' ? '◷ Prog.' : '○ Draft'}</span>
+    </div>
+  `).join('');
+}
+
+function renderTopPosts() {
+  const data = [
+    { caption:'Dimineata mea de fitness 🔥', account:'@fitlife.ro', type:'reel', views:'42.1K', eng:'6.8%', sp:[20,30,45,60,80,100,90,95] },
+    { caption:'5 rețete sănătoase sub 20min ⏱', account:'@foodblog.ro', type:'carousel', views:'28.7K', eng:'4.2%', sp:[30,40,55,50,60,70,65,70] },
+    { caption:'Sunrise la Bran Castle 🏰', account:'@travelromania', type:'photo', views:'21.3K', eng:'7.1%', sp:[10,20,35,60,85,90,80,90] },
+    { caption:'AI tools 2026 — ce folosesc zilnic', account:'@techbytes.ro', type:'reel', views:'18.9K', eng:'8.3%', sp:[15,25,40,55,70,85,80,85] },
+  ];
+  const types = { reel:'tag-reel', carousel:'tag-carousel', photo:'tag-photo', story:'tag-story' };
+  document.getElementById('top-posts-table').innerHTML = data.map(d => `
+    <tr>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.caption}</td>
+      <td style="font-size:12px;color:var(--muted);">${d.account}</td>
+      <td><span class="tag ${types[d.type]}">${d.type}</span></td>
+      <td style="font-family:'DM Mono',monospace;font-weight:500;">${d.views}</td>
+      <td style="color:var(--accent3);">${d.eng}</td>
+      <td>
+        <div class="sparkline">${d.sp.map(h => `<div class="sp" style="height:${h}%;"></div>`).join('')}</div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ─── ACCOUNTS GRID ──────────────────────────────────────
+function renderAccounts() {
+  document.getElementById('accounts-grid').innerHTML = accounts.map((a, idx) => `
+    <div class="account-card">
+      <div class="account-card-header">
+        <div class="acct-avatar" style="background:${a.bg};color:${a.color};">${a.emoji}</div>
+        <div>
+          <div class="acct-name">${a.username}</div>
+          <div class="acct-handle">${a.niche} · ${a.posts} posts</div>
+        </div>
+      </div>
+      <div class="acct-stats-row">
+        <div class="acct-stat">
+          <div class="acct-stat-val" style="color:${a.color};">${a.followersK}</div>
+          <div class="acct-stat-label">Followers</div>
+        </div>
+        <div class="acct-stat">
+          <div class="acct-stat-val">${a.engagement}</div>
+          <div class="acct-stat-label">Eng. rate</div>
+        </div>
+        <div class="acct-stat">
+          <div class="acct-stat-val">${(a.views[6]/1000).toFixed(1)}K</div>
+          <div class="acct-stat-label">Views/zi</div>
+        </div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Views — ultimele 7 zile</div>
+        <div class="mini-chart-row">
+          ${a.views.map((v, i) => `<div class="mini-bar" style="height:${Math.round(v/a.views[6]*100)}%;background:${a.color};opacity:${0.3+0.7*(i/6)};border-radius:2px 2px 0 0;"></div>`).join('')}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="alert('Stats detaliate pentru ${a.username}')">Stats</button>
+        <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="switchSection('posts')">Postări</button>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('accounts-subtitle').textContent = `${accounts.length} conturi active · ${10-accounts.length} rămase pe plan`;
+  document.getElementById('count-active').textContent = accounts.length;
+  document.getElementById('progress-active').style.width = (accounts.length/10*100) + '%';
+}
+
+// ─── POSTS TABLE ────────────────────────────────────────
+let currentFilter = 'all';
+function renderPosts() {
+  const filtered = currentFilter === 'all' ? scheduledPosts : scheduledPosts.filter(p => p.status === currentFilter);
+  const types = { reel:'tag-reel', carousel:'tag-carousel', photo:'tag-photo', story:'tag-story' };
+  document.getElementById('posts-table').innerHTML = filtered.length ? filtered.map((p, i) => `
+    <tr>
+      <td>${p.emoji}&nbsp;${p.caption}</td>
+      <td style="font-size:12px;color:var(--muted);">${p.account}</td>
+      <td><span class="tag ${types[p.type]}">${p.type}</span></td>
+      <td style="font-size:12px;color:var(--muted);">${p.date}</td>
+      <td style="font-family:'DM Mono',monospace;">${p.views > 0 ? (p.views/1000).toFixed(1)+'K' : '—'}</td>
+      <td><span class="post-status status-${p.status}">${p.status === 'live' ? '● Live' : p.status === 'scheduled' ? '◷ Programat' : '○ Draft'}</span></td>
+      <td><button class="btn btn-ghost btn-sm" onclick="editPost(${scheduledPosts.indexOf(p)})">Edit</button></td>
+    </tr>
+  `).join('') : `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:24px;">Nicio postare în această categorie.</td></tr>`;
+}
+
+function filterPosts(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPosts();
+}
+
+function editPost(idx) {
+  alert('Editare postare: ' + scheduledPosts[idx].caption);
+}
+
+// ─── CALENDAR ───────────────────────────────────────────
+function renderCalendar() {
+  const calData = {
+    3:['reel','story'], 5:['photo'], 7:['reel'], 10:['photo','story'], 12:['reel'],
+    14:['carousel','story'], 17:['reel'], 19:['photo'], 21:['reel','story'],
+    24:['carousel'], 26:['reel','photo'], 28:['reel','story','photo'], 29:['reel'], 30:['photo']
+  };
+  const dayNames = ['Lun','Mar','Mie','Joi','Vin','Sâm','Dum'];
+  document.getElementById('cal-header').innerHTML = dayNames.map(d => `<div class="cal-day-name">${d}</div>`).join('');
+  const firstDay = 2;
+  const daysInMonth = 30;
+  let cells = '';
+  for (let i = 0; i < firstDay; i++) cells += `<div class="cal-day other-month"><div class="cal-day-num">${30-firstDay+i+1}</div></div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = d === 28;
+    const dots = calData[d] ? calData[d].map(t => `<div class="cal-dot ${t}">${t[0].toUpperCase()}</div>`).join('') : '';
+    cells += `<div class="cal-day${isToday?' today':''}"><div class="cal-day-num">${d}</div>${dots}</div>`;
+  }
+  const remaining = (firstDay + daysInMonth) % 7;
+  if (remaining > 0) for (let i = 1; i <= 7-remaining; i++) cells += `<div class="cal-day other-month"><div class="cal-day-num">${i}</div></div>`;
+  document.getElementById('calendar-grid').innerHTML = cells;
+}
+
+// ─── ANALYTICS ──────────────────────────────────────────
+function renderAnalytics() {
+  const types = [
+    { label:'Reels', pct:68, color:'var(--accent)' },
+    { label:'Carousels', pct:18, color:'var(--accent4)' },
+    { label:'Photos', pct:10, color:'var(--accent2)' },
+    { label:'Stories', pct:4, color:'var(--accent3)' },
+  ];
+  document.getElementById('content-type-bars').innerHTML = types.map(t => `
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">
+        <span>${t.label}</span>
+        <span style="color:${t.color};font-weight:500;">${t.pct}%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${t.pct}%;background:${t.color};"></div></div>
+    </div>
+  `).join('');
+
+  const heatValues = [1,1,1,1,1,2,3,5,7,8,7,6,8,9,7,6,5,8,9,10,8,6,4,2];
+  document.getElementById('hour-heatmap').innerHTML = heatValues.map((v, h) =>
+    `<div title="${h}:00 — engagement ${v*10}%" style="height:36px;background:var(--accent);opacity:${v/10};border-radius:4px;cursor:default;"></div>`
+  ).join('');
+
+  const flabels = ['Ian','Feb','Mar','Apr'];
+  const fvals = [78200, 82100, 85700, 89300];
+  const fmax = Math.max(...fvals);
+  document.getElementById('followers-chart').innerHTML = fvals.map((v, i) =>
+    `<div style="flex:1;height:${Math.round(v/fmax*100)}%;background:var(--accent4);opacity:${0.5+0.5*(i/3)};border-radius:4px 4px 0 0;cursor:default;" title="${(v/1000).toFixed(1)}K followers"></div>`
+  ).join('');
+  document.getElementById('followers-labels').innerHTML = flabels.map(l =>
+    `<div style="flex:1;text-align:center;font-size:11px;color:var(--muted);">${l}</div>`
+  ).join('');
+}
+
+// ─── ADD ACCOUNT ────────────────────────────────────────
+const palettes = [
+  { color:'#c850f8', bg:'rgba(200,80,248,0.15)' },
+  { color:'#ff6b35', bg:'rgba(255,107,53,0.15)' },
+  { color:'#00d9a0', bg:'rgba(0,217,160,0.15)' },
+  { color:'#4d9fff', bg:'rgba(77,159,255,0.15)' },
+];
+const emojis = ['✨','🔥','💎','🌟','⚡','🎯','🏆','🚀'];
+
+function addAccount() {
+  const username = document.getElementById('new-account-username').value.trim();
+  const niche = document.getElementById('new-account-niche').value;
+  const followers = parseInt(document.getElementById('new-account-followers').value) || 1000;
+  if (!username) { alert('Introdu username-ul contului!'); return; }
+  const pal = palettes[accounts.length % palettes.length];
+  const handle = username.startsWith('@') ? username : '@' + username;
+  accounts.push({
+    username: handle, niche, followers,
+    followersK: followers >= 1000 ? (followers/1000).toFixed(1)+'K' : followers.toString(),
+    color: pal.color, bg: pal.bg,
+    emoji: emojis[accounts.length % emojis.length],
+    views: [100,120,130,110,140,150,160],
+    engagement: '3.5%', posts: 0
+  });
+  document.getElementById('new-account-username').value = '';
+  document.getElementById('new-account-followers').value = '';
+  closeModal('add-account-modal');
+  renderAccounts();
+  renderDashAccounts();
+  updatePostAccountSelect();
+}
+
+// ─── ADD POST ───────────────────────────────────────────
+function updatePostAccountSelect() {
+  const sel = document.getElementById('new-post-account');
+  sel.innerHTML = accounts.map(a => `<option value="${a.username}">${a.username}</option>`).join('');
+}
+
+function addPostFn(status) {
+  const account = document.getElementById('new-post-account').value;
+  const type = document.getElementById('new-post-type').value;
+  const caption = document.getElementById('new-post-caption').value.trim() || 'Postare nouă';
+  const date = document.getElementById('new-post-date').value;
+  const time = document.getElementById('new-post-time').value;
+  const emojisMap = { reel:'🎬', photo:'📸', carousel:'🖼', story:'⭐' };
+  scheduledPosts.unshift({
+    caption, account, type,
+    date: date ? `${date.split('-').reverse().join('/')} · ${time}` : '—',
+    status, views: 0,
+    emoji: emojisMap[type] || '📸'
+  });
+  document.getElementById('new-post-caption').value = '';
+  closeModal('add-post-modal');
+  renderPosts();
+  renderDashPosts();
+  updateBadge();
+}
+function addPost() { addPostFn('scheduled'); }
+function addPostDraft() { addPostFn('draft'); }
+
+// ─── DATE ───────────────────────────────────────────────
+const now = new Date();
+document.getElementById('today-date').textContent = now.toLocaleDateString('ro-RO', { day:'numeric', month:'long', year:'numeric' });
+document.getElementById('new-post-date').valueAsDate = now;
+
+// ─── INIT ───────────────────────────────────────────────
+renderMainChart();
+renderDashAccounts();
+renderDashPosts();
+renderTopPosts();
+renderAccounts();
+renderPosts();
+updatePostAccountSelect();
+</script>
+</body>
+</html>
